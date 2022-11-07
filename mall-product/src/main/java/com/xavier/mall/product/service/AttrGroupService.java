@@ -1,7 +1,9 @@
 package com.xavier.mall.product.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xavier.common.utils.PageUtils;
+import com.xavier.mall.product.controller.AttrGroupController;
 import com.xavier.mall.product.entity.AttrGroupEntity;
 
 import java.util.Map;
@@ -16,5 +18,7 @@ import java.util.Map;
 public interface AttrGroupService extends IService<AttrGroupEntity> {
 
     PageUtils queryPage(Map<String, Object> params);
+
+    PageUtils getAttrGroupByCatelogId(Map<String, Object> params, Long catelogId);
 }
 
