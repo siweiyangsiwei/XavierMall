@@ -2,9 +2,13 @@ package com.xavier.mall.product.service.impl;
 
 import com.xavier.mall.product.dao.BrandDao;
 import com.xavier.mall.product.dao.CategoryDao;
+import com.xavier.mall.product.entity.BrandEntity;
+import com.xavier.mall.product.service.BrandService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -27,6 +31,11 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
     private BrandDao brandDao;
     @Resource
     private CategoryDao categoryDao;
+    @Resource
+    private CategoryBrandRelationDao categoryBrandRelationDao;
+
+    @Resource
+    private BrandService brandService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -67,6 +76,18 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
         categoryBrandRelationEntity.setCatelogName(name);
         this.update(categoryBrandRelationEntity,
                 new QueryWrapper<CategoryBrandRelationEntity>().eq("catelog_id",catId));
+    }
+
+    @Override
+    public List<BrandEntity> getBrandsByCatId(Long catId) {
+        List<CategoryBrandRelationEntity> entities = categoryBrandRelationDao.selectList(
+                new QueryWrapper<CategoryBrandRelationEntity>()
+                        .eq("catelog_id", catId));
+        List<BrandEntity> brandEntities = entities.stream().map(item -> {
+            Long brandId = item.getBrandId();
+            return brandService.getById(brandId);
+        }).collect(Collectors.toList());
+        return brandEntities;
     }
 
 }

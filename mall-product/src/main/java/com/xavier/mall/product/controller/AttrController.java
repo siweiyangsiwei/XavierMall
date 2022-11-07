@@ -3,6 +3,8 @@ package com.xavier.mall.product.controller;
 import java.util.Arrays;
 import java.util.Map;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.xavier.mall.product.vo.AttrGroupRelationVo;
 import com.xavier.mall.product.vo.AttrRespVo;
 import com.xavier.mall.product.vo.AttrVo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,9 +85,11 @@ public class AttrController {
         return R.ok();
     }
 
-    @GetMapping("/base/list/{catelogId}")
-    public R baseAttrList(@RequestParam Map<String,Object> params,@PathVariable("catelogId") Long catelogId){
-        PageUtils page =  attrService.queryBaseAttrPage(params,catelogId);
+    @GetMapping("/{attrType}/list/{catelogId}")
+    public R baseAttrList(@RequestParam Map<String,Object> params,
+                          @PathVariable("catelogId") Long catelogId,
+                          @PathVariable("attrType") String type){
+        PageUtils page =  attrService.queryAttrPage(params,catelogId,type);
         return R.ok().put("page",page);
     }
 

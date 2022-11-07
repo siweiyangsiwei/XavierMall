@@ -3,6 +3,7 @@ package com.xavier.mall.product.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xavier.common.utils.PageUtils;
 import com.xavier.mall.product.entity.AttrEntity;
+import com.xavier.mall.product.vo.AttrGroupRelationVo;
 import com.xavier.mall.product.vo.AttrRespVo;
 import com.xavier.mall.product.vo.AttrVo;
 
@@ -21,11 +22,11 @@ public interface AttrService extends IService<AttrEntity> {
 
     void saveAttr(AttrVo attr);
 
-    PageUtils queryBaseAttrPage(Map<String, Object> params, Long catelogId);
 
     AttrRespVo getAttrInfo(Long attrId);
 
     void updateAttr(AttrVo attr);
 
+    PageUtils queryAttrPage(Map<String, Object> params, Long catelogId, String type);
 }
 
