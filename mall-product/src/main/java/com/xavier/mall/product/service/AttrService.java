@@ -7,6 +7,7 @@ import com.xavier.mall.product.vo.AttrGroupRelationVo;
 import com.xavier.mall.product.vo.AttrRespVo;
 import com.xavier.mall.product.vo.AttrVo;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,5 +29,7 @@ public interface AttrService extends IService<AttrEntity> {
     void updateAttr(AttrVo attr);
 
     PageUtils queryAttrPage(Map<String, Object> params, Long catelogId, String type);
+
+    List<Long> selectSearchAttrs(List<Long> attrIds);
 }
 

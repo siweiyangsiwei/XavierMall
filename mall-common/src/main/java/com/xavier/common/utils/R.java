@@ -8,6 +8,8 @@
 
 package com.xavier.common.utils;
 
+import cn.hutool.core.lang.TypeReference;
+import cn.hutool.json.JSONUtil;
 import org.apache.http.HttpStatus;
 
 import java.util.HashMap;
@@ -24,6 +26,18 @@ public class R extends HashMap<String, Object> {
 	public R() {
 		put("code", 0);
 		put("msg", "success");
+	}
+
+	public <T> T getDate(TypeReference<T> typeReference){
+		Object data = get("data");
+		String s = JSONUtil.toJsonStr(data);
+		T t = JSONUtil.toBean(s,typeReference,false);
+		return t;
+	}
+
+	public R setDate(Object data){
+		put("data",data);
+		return this;
 	}
 	
 	public static R error() {
@@ -60,5 +74,9 @@ public class R extends HashMap<String, Object> {
 	public R put(String key, Object value) {
 		super.put(key, value);
 		return this;
+	}
+
+	public Integer getCode(){
+		return (Integer) this.get("code");
 	}
 }

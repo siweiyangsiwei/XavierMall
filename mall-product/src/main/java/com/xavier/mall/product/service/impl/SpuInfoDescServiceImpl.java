@@ -12,9 +12,13 @@ import com.xavier.mall.product.dao.SpuInfoDescDao;
 import com.xavier.mall.product.entity.SpuInfoDescEntity;
 import com.xavier.mall.product.service.SpuInfoDescService;
 
+import javax.annotation.Resource;
+
 
 @Service("spuInfoDescService")
 public class SpuInfoDescServiceImpl extends ServiceImpl<SpuInfoDescDao, SpuInfoDescEntity> implements SpuInfoDescService {
+    @Resource
+    private SpuInfoDescDao spuInfoDescDao;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -24,6 +28,11 @@ public class SpuInfoDescServiceImpl extends ServiceImpl<SpuInfoDescDao, SpuInfoD
         );
 
         return new PageUtils(page);
+    }
+
+    @Override
+    public void saveSpuInfoDesc(SpuInfoDescEntity spuInfoDescEntity) {
+        spuInfoDescDao.insert(spuInfoDescEntity);
     }
 
 }

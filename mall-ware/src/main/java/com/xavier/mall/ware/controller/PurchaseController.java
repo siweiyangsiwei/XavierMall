@@ -1,14 +1,15 @@
 package com.xavier.mall.ware.controller;
 
 import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
+import cn.hutool.core.io.file.PathUtil;
+import com.xavier.mall.ware.vo.MergeVo;
+import com.xavier.mall.ware.vo.PurchaseDoneVo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.xavier.mall.ware.entity.PurchaseEntity;
 import com.xavier.mall.ware.service.PurchaseService;
@@ -59,6 +60,8 @@ public class PurchaseController {
     @RequestMapping("/save")
     //@RequiresPermissions("ware:purchase:save")
     public R save(@RequestBody PurchaseEntity purchase){
+        purchase.setUpdateTime(new Date());
+        purchase.setCreateTime(new Date());
 		purchaseService.save(purchase);
 
         return R.ok();
@@ -86,4 +89,27 @@ public class PurchaseController {
         return R.ok();
     }
 
+    @GetMapping("/unreceive/list")
+    public R unreceiveList(@RequestParam Map<String,Object> params){
+        PageUtils page = purchaseService.queryPageUnreceive(params);
+        return R.ok().put("page",page);
+    }
+
+    @PostMapping("/merge")
+    public R merge(@RequestBody MergeVo mergeVo){
+        purchaseService.mergePurchase(mergeVo);
+        return R.ok();
+    }
+
+    @PostMapping("/received")
+    public R received(@RequestBody List<Long> ids){
+        purchaseService.received(ids);
+        return R.ok();
+    }
+
+    @PostMapping("/done")
+    public R finish(@RequestBody PurchaseDoneVo purchaseDoneVo){
+        purchaseService.done(purchaseDoneVo);
+        return R.ok();
+    }
 }
