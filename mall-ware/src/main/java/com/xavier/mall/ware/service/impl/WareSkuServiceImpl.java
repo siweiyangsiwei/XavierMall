@@ -2,9 +2,14 @@ package com.xavier.mall.ware.service.impl;
 
 import com.xavier.common.utils.R;
 import com.xavier.mall.ware.feign.ProductFeignService;
+import com.xavier.mall.ware.vo.SkuHasStockVo;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -74,6 +79,17 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuDao, WareSkuEntity> i
             wareSkuDao.insert(wareSkuEntity);
         }
         wareSkuDao.addStock(skuId,wareId,skuNum);
+    }
+
+    @Override
+    public List<SkuHasStockVo> getSkuHasStock(List<Long> skuIds) {
+        return skuIds.stream().map(skuId -> {
+            SkuHasStockVo skuHasStockVo = new SkuHasStockVo();
+            Long count = baseMapper.getSkuStock(skuId);
+            skuHasStockVo.setSkuId(skuId);
+            skuHasStockVo.setHasStock(count != null && count > 0);
+            return skuHasStockVo;
+        }).collect(Collectors.toList());
     }
 
 }
