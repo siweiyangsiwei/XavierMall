@@ -21,7 +21,7 @@ public class Skus {
     private BigDecimal price;
     private String skuTitle;
     private String skuSubtitle;
-    private List<String> images;
+    private List<Images> images;
     private List<String> descar;
     private int fullCount;
     private BigDecimal discount;
