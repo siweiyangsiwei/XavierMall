@@ -2,11 +2,13 @@ package com.xavier.mall.product.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.json.JSONUtil;
 import com.xavier.common.utils.CacheClient;
 import com.xavier.common.utils.R;
 import com.xavier.mall.product.service.CategoryBrandRelationService;
+import com.xavier.mall.product.vo.Catelog2Vo;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Resource
     private CategoryBrandRelationService categoryBrandRelationService;
+
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -93,6 +96,65 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             categoryBrandRelationService.updateCategory(category.getCatId(), category.getName());
             // todo 同步更新其他关联数据
         }
+    }
+
+    @Override
+    public List<CategoryEntity> getLevel1Categorys() {
+        return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", 0));
+    }
+
+    @Override
+    public Map<String, List<Catelog2Vo>> getCatalogJson() {
+        String catalogJson = stringRedisTemplate.opsForValue().get("catalogJson");
+        if (catalogJson == null || StringUtils.isEmpty(catalogJson)) {
+            Map<String, List<Catelog2Vo>> catalogJsonFromDB = getCatalogJsonFromDB();
+            stringRedisTemplate.opsForValue().set("catalogJson",JSONUtil.toJsonStr(catalogJsonFromDB));
+            return catalogJsonFromDB;
+        }
+        Map<String, List<Catelog2Vo>> catalog = JSONUtil.toBean(catalogJson, new TypeReference<Map<String, List<Catelog2Vo>>>() {
+        }, false);
+        return catalog;
+    }
+
+
+    public Map<String, List<Catelog2Vo>> getCatalogJsonFromDB() {
+        // 多次查询变为一次,查出所有
+        List<CategoryEntity> selectList = baseMapper.selectList(null);
+
+        List<CategoryEntity> level1Categorys = getCategoryEntities(selectList,0L);
+
+        Map<String, List<Catelog2Vo>> collect = level1Categorys.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
+            // value值的封装
+            // 找出2级分类
+            List<CategoryEntity> categoryEntities = getCategoryEntities(selectList,v.getCatId());
+            // 进行2级分类封装
+            List<Catelog2Vo> catelog2Vos = null;
+            if (categoryEntities != null) {
+                catelog2Vos = categoryEntities.stream().map(item -> {
+                    Catelog2Vo catelog2Vo =
+                            new Catelog2Vo(v.getCatId().toString(), null, item.getCatId().toString(), item.getName());
+                    // 找出3级分类
+                    List<CategoryEntity> categoryEntities1 = getCategoryEntities(selectList,item.getCatId());
+                    // 3级分类封装
+                    List<Catelog2Vo.Catelog3Vo> catelog3Vos = null;
+                    if (categoryEntities1 != null) {
+                        catelog3Vos = categoryEntities1.stream().map(item1 -> {
+                            Catelog2Vo.Catelog3Vo catelog3Vo =
+                                    new Catelog2Vo.Catelog3Vo(item.getCatId().toString(), item1.getCatId().toString(), item1.getName());
+                            return catelog3Vo;
+                        }).collect(Collectors.toList());
+                        catelog2Vo.setCatalog3List(catelog3Vos);
+                    }
+                    return catelog2Vo;
+                }).collect(Collectors.toList());
+            }
+            return catelog2Vos;
+        }));
+        return collect;
+    }
+
+    private List<CategoryEntity> getCategoryEntities( List<CategoryEntity> selectList,Long parentCid) {
+        return selectList.stream().filter(item -> item.getParentCid() == parentCid).collect(Collectors.toList());
     }
 
     private void findParentPath(Long catelogId, List<Long> paths) {

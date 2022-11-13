@@ -4,6 +4,7 @@ import com.xavier.mall.product.entity.BrandEntity;
 import com.xavier.mall.product.service.BrandService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
@@ -16,6 +17,14 @@ class MallProductApplicationTests {
 
     @Resource
     BrandService brandService;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Test
+    void redisTest(){
+        stringRedisTemplate.opsForValue().set("test:key","hello world");
+    }
 
     @Test
     void contextLoads() {

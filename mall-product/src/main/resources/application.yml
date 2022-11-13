@@ -1,4 +1,7 @@
-
 ribbon:
   ReadTimeout: 60000
   ConnectTimeout: 60000
+spring:
+  thymeleaf:
+    cache: false
+    prefix: classpath:/static/
