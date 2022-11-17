@@ -202,7 +202,7 @@
         <div class="header_main_left">
           <ul>
             <li th:each="category : ${categorys}">
-              <a href="/static/#" class="header_main_left_a" th:attr="ctg-data=${category.catId}"><b th:text="${category.name}">家用电器111</b></a>
+              <a href="javascript:search()" class="header_main_left_a" th:attr="ctg-data=${category.catId}"><b th:text="${category.name}">家用电器111</b></a>
             </li>
           </ul>
 
@@ -607,7 +607,7 @@
 <script type="text/javascript">
   function search() {
       var keyword=$("#searchText").val()
-      window.location.href="/static/http://search.gulimall.com/search.html?keyword="+keyword;
+      window.location.href="http://search.xaviermall.com:81/list.html?keyword="+keyword;
   }
 
 </script>

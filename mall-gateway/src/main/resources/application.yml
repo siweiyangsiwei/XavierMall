@@ -1,0 +1,42 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: ware_route
+          uri: lb://xaviermall-ware
+          predicates:
+            - Path=/api/ware/**
+          filters:
+            - RewritePath=/api/?(?<segment>.*),/$\{segment}
+        - id: member_route
+          uri: lb://xaviermall-member
+          predicates:
+            - Path=/api/member/**
+          filters:
+            - RewritePath=/api/?(?<segment>.*),/$\{segment}
+        - id: product_route
+          uri: lb://xaviermall-product
+          predicates:
+            - Path=/api/product/**
+          filters:
+            - RewritePath=/api/?(?<segment>.*),/$\{segment}
+        - id: third_party_route
+          uri: lb://xaviermall-third-party
+          predicates:
+            - Path=/api/thirdparty/**
+          filters:
+            - RewritePath=/api/thirdparty/?(?<segment>.*),/$\{segment}
+        - id: admin_route
+          uri: lb://renren-fast
+          predicates:
+            - Path=/api/**
+          filters:
+            - RewritePath=/api/?(?<segment>.*),/renren-fast/$\{segment}
+        - id: mall_host_route
+          uri: lb://xaviermall-product
+          predicates:
+            - Host=xaviermall.com
+        - id: mall_search_route
+          uri: lb://xaviermall-search
+          predicates:
+            - Host=search.xaviermall.com

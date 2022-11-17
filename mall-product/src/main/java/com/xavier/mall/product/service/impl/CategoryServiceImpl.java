@@ -10,9 +10,14 @@ import com.xavier.common.utils.R;
 import com.xavier.mall.product.service.CategoryBrandRelationService;
 import com.xavier.mall.product.vo.Catelog2Vo;
 import org.apache.commons.lang.StringUtils;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.temporal.ValueRange;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,6 +49,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     @Resource
     private CategoryBrandRelationService categoryBrandRelationService;
 
+    @Resource
+    private RedissonClient redissonClient;
+
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -57,14 +65,21 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public List<CategoryEntity> listWithTree() {
-        String category = stringRedisTemplate.opsForValue().get(XAVIERMALL_PRODUCT_CATEGORY_KEY);
-        List<CategoryEntity> entities = JSONUtil.toList(category, CategoryEntity.class);
-        if (entities == null || entities.isEmpty()) {
-            entities = categoryDao.selectList(null);
-            stringRedisTemplate.opsForValue().set(XAVIERMALL_PRODUCT_CATEGORY_KEY, JSONUtil.toJsonStr(entities));
-        }
+        List<CategoryEntity> entities = categoryDao.selectList(null);
         // 将所有的数据分类成一个3级分类
         return sortListWithTree(0L, entities);
+    }
+
+    private List<CategoryEntity> sortListWithTree(Long parentCid, List<CategoryEntity> entities) {
+        List<CategoryEntity> listTree = entities.stream()
+                .filter(categoryEntity -> categoryEntity.getParentCid().equals(parentCid))
+                .map(menu -> {
+                    menu.setChildren(sortListWithTree(menu.getCatId(), entities));
+                    return menu;
+                })
+                .sorted(Comparator.comparingInt(menu -> (menu.getSort() == null ? 0 : menu.getSort())))
+                .collect(Collectors.toList());
+        return listTree;
     }
 
     @Override
@@ -88,6 +103,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      *
      * @param category
      */
+    @CacheEvict(value = "category", key = "'level1Category'")
     @Transactional
     @Override
     public void updateCascade(CategoryEntity category) {
@@ -98,22 +114,35 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         }
     }
 
+    @Cacheable(value = "category", key = "'level1Category'")
     @Override
     public List<CategoryEntity> getLevel1Categorys() {
         return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", 0));
     }
 
+
     @Override
     public Map<String, List<Catelog2Vo>> getCatalogJson() {
         String catalogJson = stringRedisTemplate.opsForValue().get("catalogJson");
         if (catalogJson == null || StringUtils.isEmpty(catalogJson)) {
-            Map<String, List<Catelog2Vo>> catalogJsonFromDB = getCatalogJsonFromDB();
-            stringRedisTemplate.opsForValue().set("catalogJson",JSONUtil.toJsonStr(catalogJsonFromDB));
-            return catalogJsonFromDB;
+            return getCatalogJsonFromDBWithRedissonLock();
         }
         Map<String, List<Catelog2Vo>> catalog = JSONUtil.toBean(catalogJson, new TypeReference<Map<String, List<Catelog2Vo>>>() {
         }, false);
         return catalog;
+    }
+
+    public Map<String, List<Catelog2Vo>> getCatalogJsonFromDBWithRedissonLock(){
+        RLock lock = redissonClient.getLock("catalogJson:lock");
+        lock.lock();
+        Map<String, List<Catelog2Vo>> dataFromDB;
+        try {
+            dataFromDB = getCatalogJsonFromDB();
+            stringRedisTemplate.opsForValue().set("catalogJson",JSONUtil.toJsonStr(dataFromDB));
+        }finally {
+            lock.unlock();
+        }
+        return dataFromDB;
     }
 
 
@@ -166,16 +195,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     }
 
 
-    private List<CategoryEntity> sortListWithTree(Long parentCid, List<CategoryEntity> entities) {
-        List<CategoryEntity> listTree = entities.stream()
-                .filter(categoryEntity -> categoryEntity.getParentCid().equals(parentCid))
-                .map(menu -> {
-                    menu.setChildren(sortListWithTree(menu.getCatId(), entities));
-                    return menu;
-                })
-                .sorted(Comparator.comparingInt(menu -> (menu.getSort() == null ? 0 : menu.getSort())))
-                .collect(Collectors.toList());
-        return listTree;
-    }
+
 
 }
